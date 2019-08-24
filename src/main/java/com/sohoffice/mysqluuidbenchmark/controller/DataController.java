@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,12 +42,15 @@ public class DataController {
   @Autowired
   private StringUuidRepository stringUuidRepository;
 
+  @PersistenceContext
+  private EntityManager entityManager;
+
   @RequestMapping(value = "/prepare", method = RequestMethod.POST)
-  public void postPrepare() {
+  public void prepareData(@RequestParam(defaultValue = "0") long from) {
     // init my transaction template
     TransactionTemplate transactionTemplate = new TransactionTemplate(platformTransactionManager);
     // loop for n / 1000 groups
-    LongStream.range(0, constants.getBenchmarkSize() / 1000)
+    LongStream.range(from, constants.getBenchmarkSize() / 1000)
         .forEach(gn -> {
           // wrap in a transaction
           transactionTemplate.execute(status -> {
@@ -65,29 +71,28 @@ public class DataController {
   }
 
   private void populateUuids(List<UuidObjects> list) {
-    List<BinaryUuid> allBu = list.stream().map(obj -> {
+    list.forEach(obj -> {
       BinaryUuid bu = new BinaryUuid();
       bu.setId(obj.id);
       bu.setUuid(obj.uuid);
-      return bu;
-    }).collect(Collectors.toList());
-    binaryUuidRepository.save(allBu);
+      entityManager.persist(bu);
+    });
 
-    List<NumberUuid> allNu = list.stream().map(obj -> {
+    list.forEach(obj -> {
       NumberUuid nu = new NumberUuid();
       nu.setId(obj.id);
       nu.setUuidObject(obj.uuid);
-      return nu;
-    }).collect(Collectors.toList());
-    numberUuidRepository.save(allNu);
+      entityManager.persist(nu);
+    });
 
-    List<StringUuid> allSu = list.stream().map(obj -> {
+    list.forEach(obj -> {
       StringUuid su = new StringUuid();
       su.setId(obj.id);
       su.setUuid(obj.uuid.toString());
-      return su;
-    }).collect(Collectors.toList());
-    stringUuidRepository.save(allSu);
+      entityManager.persist(su);
+    });
+    entityManager.flush();
+    entityManager.clear();
   }
 
   private static class UuidObjects {

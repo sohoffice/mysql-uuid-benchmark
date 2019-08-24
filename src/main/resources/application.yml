@@ -3,3 +3,12 @@ spring:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/uuid
     username: uuid
     password: uuid
+  jpa:
+    properties:
+      hibernate:
+        cache:
+          use_second_level_cache: false
+        jdbc:
+          batch_size: 20
+
+        generate_statistics: true
