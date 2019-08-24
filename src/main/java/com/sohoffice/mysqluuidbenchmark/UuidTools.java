@@ -15,7 +15,7 @@ public class UuidTools {
   }
 
   public static UUID fromByteBuffer(ByteBuffer bb) {
-    return UUID.nameUUIDFromBytes(bb.array());
+    return new UUID(bb.getLong(), bb.getLong());
   }
 
 }

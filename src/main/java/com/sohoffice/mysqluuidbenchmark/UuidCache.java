@@ -27,6 +27,15 @@ public class UuidCache {
     endPos += 16;
   }
 
+  public synchronized void put(int pos, UUID uuid) {
+    ByteBuffer bb = UuidTools.toByteBuffer(uuid);
+    int offset = pos * 16;
+    System.arraycopy(bb.array(), 0, cache, offset, 16);
+    if (offset + 16 > endPos) {
+      endPos = offset + 16;
+    }
+  }
+
   public ByteBuffer getUuidBytes(int pos) {
     byte[] bar = new byte[16];
     System.arraycopy(cache, pos * 16, bar, 0, 16);

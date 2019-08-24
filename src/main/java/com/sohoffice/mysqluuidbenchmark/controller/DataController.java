@@ -1,6 +1,7 @@
 package com.sohoffice.mysqluuidbenchmark.controller;
 
 import com.sohoffice.mysqluuidbenchmark.Constants;
+import com.sohoffice.mysqluuidbenchmark.UuidCache;
 import com.sohoffice.mysqluuidbenchmark.entity.BinaryUuid;
 import com.sohoffice.mysqluuidbenchmark.entity.NumberUuid;
 import com.sohoffice.mysqluuidbenchmark.entity.StringUuid;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -45,12 +47,15 @@ public class DataController {
   @PersistenceContext
   private EntityManager entityManager;
 
+  @Autowired
+  private UuidCache uuidCache;
+
   @RequestMapping(value = "/prepare", method = RequestMethod.POST)
   public void prepareData(@RequestParam(defaultValue = "0") long from) {
     // init my transaction template
     TransactionTemplate transactionTemplate = new TransactionTemplate(platformTransactionManager);
     // loop for n / 1000 groups
-    LongStream.range(from, constants.getBenchmarkSize() / 1000)
+    LongStream.range(from, constants.getBenchmarkDataSize() / 1000)
         .forEach(gn -> {
           // wrap in a transaction
           transactionTemplate.execute(status -> {
@@ -69,6 +74,14 @@ public class DataController {
           });
         });
   }
+
+  @RequestMapping(value = "/load", method = RequestMethod.POST)
+  @Transactional
+  public void loadCache() {
+    binaryUuidRepository.streamAll().forEach(bu ->
+        uuidCache.put(Math.toIntExact(bu.getId()), bu.getUuid()));
+  }
+
 
   private void populateUuids(List<UuidObjects> list) {
     list.forEach(obj -> {

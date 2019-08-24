@@ -16,6 +16,6 @@ public class MysqlUuidBenchmarkApplication extends WebMvcConfigurerAdapter {
 
   @Bean(name = "cache_bytes")
   public byte[] getCacheBytes(Constants constants) {
-    return new byte[constants.getBenchmarkSize() * 16];
+    return new byte[constants.getBenchmarkDataSize() * 16];
   }
 }
