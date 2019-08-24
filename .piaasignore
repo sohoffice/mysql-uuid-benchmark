@@ -1,0 +1,10 @@
+.git
+target
+node_modules
+.idea
+*___jb_tmp___
+*___jb_old___
+.vagrant
+.piaas.d
+.piaasignore
+piaasconfig.yml

@@ -1,0 +1,21 @@
+apiVersion: 1
+profiles:
+  - name: mac2
+    connection:
+      host: mac2
+      user: douglasliu
+      destination: ~/workspaces/mysql-uuid-benchmark
+    ignoreFile: .piaasignore
+  - name: cent
+    connection:
+      host: centaurium.sohoffice.com
+      user: arcus
+      destination: ~/mysql-uuid-benchmark
+    ignoreFile: .piaasignore
+apps:
+  - name: frontend1
+    cmd: "/usr/bin/sbt"
+    params: ["-J-XX:+UseG1GC", "-Dconfig.resource=application-dev.conf", "-Dlogger.resource=logback-verbose.xml", "-Dhttp.port=9000", "-Dhttps.port=19000", "-Dredis.url=redis://localhost/", "-Dasset.location.max-load-size=30", "-jvm-debug", "9900", "~frontend/run", "9000"]
+  - name: frontend2
+    cmd: "/usr/bin/sbt"
+    params: ["-J-XX:+UseG1GC", "-Dconfig.resource=application-dev.conf", "-Dlogger.resource=logback-verbose.xml", "-Dhttp.port=9001", "-Dhttps.port=19001", "-Dredis.url=redis://localhost/", "-Dasset.location.max-load-size=30", "-jvm-debug", "9901", "~frontend/run", "9001"]

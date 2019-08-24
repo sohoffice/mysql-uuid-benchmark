@@ -1,0 +1,24 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# This is the vagrant file used to create the host for docker application redis and solr.
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.define "host" do |host|
+    db.vm.hostname = "host.arcus.vm"
+
+    db.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--ioapic", "on"]
+      vb.customize ["modifyvm", :id, "--memory", "2048"]
+      vb.customize ["modifyvm", :id, "--cpus", "2"]
+    end
+
+    # db.vm.network :forwarded_port, guest: 22, host: 2299, id: "ssh", auto_correct: true
+    # db.vm.network :forwarded_port, guest: 3306, host: 3306
+    # db.vm.network :private_network, ip: "192.168.56.97"
+  end
+
+end
