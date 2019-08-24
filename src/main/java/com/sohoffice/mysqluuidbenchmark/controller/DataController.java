@@ -1,16 +1,15 @@
 package com.sohoffice.mysqluuidbenchmark.controller;
 
 import com.sohoffice.mysqluuidbenchmark.Constants;
-import com.sohoffice.mysqluuidbenchmark.UuidTools;
 import com.sohoffice.mysqluuidbenchmark.entity.BinaryUuid;
 import com.sohoffice.mysqluuidbenchmark.entity.NumberUuid;
 import com.sohoffice.mysqluuidbenchmark.entity.StringUuid;
 import com.sohoffice.mysqluuidbenchmark.repository.BinaryUuidRepository;
 import com.sohoffice.mysqluuidbenchmark.repository.NumberUuidRepository;
 import com.sohoffice.mysqluuidbenchmark.repository.StringUuidRepository;
-import java.nio.ByteBuffer;
-import java.util.LongSummaryStatistics;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,41 +40,65 @@ public class DataController {
   private StringUuidRepository stringUuidRepository;
 
   @RequestMapping(value = "/prepare", method = RequestMethod.POST)
-  public LongSummaryStatistics postPrepare() {
+  public void postPrepare() {
     // init my transaction template
     TransactionTemplate transactionTemplate = new TransactionTemplate(platformTransactionManager);
     // loop for n / 1000 groups
-    return LongStream.range(0, constants.getBenchmarkSize() / 1000)
-        .flatMap(gn -> {
+    LongStream.range(0, constants.getBenchmarkSize() / 1000)
+        .forEach(gn -> {
           // wrap in a transaction
-          return transactionTemplate.execute(status -> {
+          transactionTemplate.execute(status -> {
             // loop 1000 times within a group
-            LongStream outStream = LongStream.range(0, 1000).map(i -> {
+            List<UuidObjects> list = LongStream.range(0, 1000).mapToObj(i -> {
               long n = gn * 1000 + i;
               UUID uuid = UUID.randomUUID();
-              ByteBuffer bb = UuidTools.toByteBuffer(uuid);
-              BinaryUuid bu = new BinaryUuid();
-              bu.setId(n);
-              bu.setUuid(uuid);
-              binaryUuidRepository.save(bu);
 
-              NumberUuid nb = new NumberUuid();
-              nb.setId(n);
-              nb.setUuidObject(uuid);
-              numberUuidRepository.save(nb);
+              return new UuidObjects(n, uuid);
+            }).collect(Collectors.toList());
 
-              StringUuid su = new StringUuid();
-              su.setId(n);
-              su.setUuid(uuid.toString());
-              stringUuidRepository.save(su);
-
-              return 1;
-            });
+            populateUuids(list);
 
             logger.info("{} records loaded", (gn + 1) * 1000);
-            return outStream;
+            return null;
           });
-        }).summaryStatistics();
+        });
+  }
+
+  private void populateUuids(List<UuidObjects> list) {
+    List<BinaryUuid> allBu = list.stream().map(obj -> {
+      BinaryUuid bu = new BinaryUuid();
+      bu.setId(obj.id);
+      bu.setUuid(obj.uuid);
+      return bu;
+    }).collect(Collectors.toList());
+    binaryUuidRepository.save(allBu);
+
+    List<NumberUuid> allNu = list.stream().map(obj -> {
+      NumberUuid nu = new NumberUuid();
+      nu.setId(obj.id);
+      nu.setUuidObject(obj.uuid);
+      return nu;
+    }).collect(Collectors.toList());
+    numberUuidRepository.save(allNu);
+
+    List<StringUuid> allSu = list.stream().map(obj -> {
+      StringUuid su = new StringUuid();
+      su.setId(obj.id);
+      su.setUuid(obj.uuid.toString());
+      return su;
+    }).collect(Collectors.toList());
+    stringUuidRepository.save(allSu);
+  }
+
+  private static class UuidObjects {
+
+    private long id;
+    private UUID uuid;
+
+    public UuidObjects(long id, UUID uuid) {
+      this.id = id;
+      this.uuid = uuid;
+    }
   }
 
   private static Logger logger = LoggerFactory.getLogger(DataController.class.getName());
