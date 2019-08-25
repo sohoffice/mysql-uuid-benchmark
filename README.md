@@ -1,9 +1,15 @@
 Usage
 -------
 
-### 1. Create database and table
+### 1. Spin up test mysql
 
-Execute the following SQL as mysql admin user.
+```
+vagrant up
+```
+
+### 2. Create database and table
+
+Execute the following SQL as mysql admin user. The default credentials is root/mysql.
 
 ```
 CREATE DATABASE uuid CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci;
@@ -33,19 +39,23 @@ create table uuid.number_uuid
 The above will create 3 variation of tables for our benchmark, but we do
 not want the unique index to be added yet.
 
-### Start the spring boot server
+### 3. Start the spring boot server
 
 ```
 mvn spring-boot:run
 ```
 
-### Run this command to start populating data
+### 4. Run this command to start populating data
+
+This can take a while. 10 million uuid will be generated and populated as string, binary or number types.
 
 ```
 curl -X POST http://localhost:8080/data/prepare
 ```
 
-### Add unique index to the tables
+### 5. Add unique index to the tables
+
+Build the index after the data was populated is faster.
 
 ```
 alter table uuid.binary_uuid add constraint binary_uuid_uniq1 unique (uuid);
@@ -53,9 +63,9 @@ alter table uuid.string_uuid add constraint string_uuid_uniq1 unique (uuid);
 alter table uuid.number_uuid add constraint number_uuid_uniq1 unique (uuid1, uuid2);
 ```
 
-### Run benchmark
+### 6. Run benchmark
 
-1. Load all uuid into cache
+1. Load all uuid into cache. This is necessary to run once each time when server is restarted.
 
     ```
     curl -X POST http://localhost:8080/data/load
